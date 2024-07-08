@@ -1,5 +1,9 @@
-import React, { useEffect } from 'react';
-import './Auth.css';
+import React, { useEffect, useState } from 'react'
+import './Auth.css'
+import axios from "axios"
+import { toast } from "react-toastify"
+import { useNavigate } from "react-router-dom"
+import { storeUser } from "../../helper"
 
 export default function Auth() {
 
@@ -23,6 +27,72 @@ export default function Auth() {
     };
   }, []);
 
+  // login funtionality
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    const url = `http://localhost:1337/api/auth/local`;
+    try {
+      if (email && password) {
+        const { data } = await axios.post(url, {
+          password: password, identifier: email
+        });
+        if (data.jwt) {
+          storeUser(data);
+          toast.success("Logged in successfully!", {
+            hideProgressBar: true,
+          });
+          console.log(data)
+          setEmail('')
+          setPassword('')
+          navigate("/");
+        }
+      }
+    } catch (error) {
+      toast.error(error.message, {
+        hideProgressBar: true,
+      });
+    }
+  };
+
+  // registeration funtionality
+  const [reg_email, setreg_Email] = useState('')
+  const [reg_password, setreg_Password] = useState('')
+  const [userName, setuserName] = useState('')
+  
+  const signUp = async (e) => {
+    e.preventDefault()
+
+    try {
+      const url = `http://localhost:1337/api/auth/local/register`;
+      if (userName && reg_email && reg_password) {
+        const res = await axios.post(url, {
+          email: reg_email, password: reg_password, username: userName
+        });
+        if (!!res) {
+          toast.success("Registered successfully!", {
+            hideProgressBar: true,
+          });
+          toast.success("Now you can login to our EchoChat!", {
+            hideProgressBar: true,
+          });
+          setreg_Email('')
+          setreg_Password('')
+          setuserName('')
+          navigate("/auth");
+        }
+      }
+    } catch (error) {
+      toast.error(error.message, {
+        hideProgressBar: true,
+      });
+    }
+  };
+
   return (
     <section className="forms-section">
   <h1 className="section-title">Welcome to EchoChat</h1>
@@ -37,14 +107,20 @@ export default function Auth() {
           <legend>Please, enter your email and password for login.</legend>
           <div className="input-block">
             <label for="login-email">E-mail</label>
-            <input id="login-email" type="email" required />
+            <input id="login-email" 
+              onChange={(e) => setEmail(e.target.value)}
+              value={email}
+              type="email" required />
           </div>
           <div className="input-block">
             <label for="login-password">Password</label>
-            <input id="login-password" type="password" required />
+            <input id="login-password"
+            onChange={(e) => setPassword(e.target.value)}
+            value={password}
+            type="password" required />
           </div>
         </fieldset>
-        <button type="submit" className="btn-login">Login</button>
+        <button type="submit" onClick={handleLogin} className="btn-login">Login</button>
       </form>
     </div>
     <div className="form-wrapper">
@@ -56,19 +132,31 @@ export default function Auth() {
         <fieldset>
           <legend>Please, enter your email, password and password confirmation for sign up.</legend>
           <div className="input-block">
+            <label for="signup-username">Username</label>
+            <input id="signup-username"
+            onChange={(e) => setuserName(e.target.value)}
+            value={userName}
+            
+            type="text" required />
+          </div>
+          <div className="input-block">
             <label for="signup-email">E-mail</label>
-            <input id="signup-email" type="email" required />
+            <input id="signup-email"
+            onChange={(e) => setreg_Email(e.target.value)}
+            value={reg_email}
+            
+            type="email" required />
           </div>
           <div className="input-block">
             <label for="signup-password">Password</label>
-            <input id="signup-password" type="password" required />
-          </div>
-          <div className="input-block">
-            <label for="signup-password-confirm">Confirm password</label>
-            <input id="signup-password-confirm" type="password" required />
+            <input id="signup-password"
+            onChange={(e) => setreg_Password(e.target.value)}
+            value={reg_password}
+
+            type="password" required />
           </div>
         </fieldset>
-        <button type="submit" className="btn-signup">Continue</button>
+        <button type="submit" onClick={signUp} className="btn-signup">Continue</button>
       </form>
     </div>
   </div>
