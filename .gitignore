@@ -1,0 +1,10 @@
+# dependencies
+/echo_chat/node_modules
+/echo_chat/.pnp
+/echo_chat/.pnp.js
+
+# testing
+/echo_chat/coverage
+
+# production
+/echo_chat/build
