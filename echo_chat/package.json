@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@apollo/client": "^3.10.8",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@emotion/styled": "^11.11.5",
     "@faker-js/faker": "^8.4.1",
+    "@mui/icons-material": "^5.16.0",
     "@mui/material": "^5.16.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -22,6 +24,7 @@
     "react-scripts": "5.0.1",
     "react-toastify": "^10.0.5",
     "reactstrap": "^9.2.2",
+    "socket.io-client": "^4.7.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

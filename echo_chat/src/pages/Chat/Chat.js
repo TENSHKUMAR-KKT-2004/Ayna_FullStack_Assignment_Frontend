@@ -1,14 +1,46 @@
-import React, { useState, useEffect } from "react"
-import './chat.css'
+import React, { useState, useEffect, useRef } from "react"
+import './Chat.css'
+import ChatIcon from '@mui/icons-material/Chat';
+import useSessions from "../../hooks/useSessions";
+import io from 'socket.io-client';
+import { userData } from "../../helper";
+
+const ENDPOINT = 'http://localhost:1337';
 
 const Chat = () => {
 
-    const [selected, setSelected] = useState(false);
+
+    // const [selected, setSelected] = useState(false);
+    const {uid,jwt} = userData()
+
+    const { loading, error, sortedSessions } = useSessions();
+
 
     useEffect(() => {
+        const socket = io(ENDPOINT,{
+            query: {
+              token: jwt
+            }
+          });
+
+    socket.on('connect', () => {
+      console.log('Connected to socket.io server');
+    });
+    socket.emit('newSession', {
+        user: uid,
+        name: 'Session 10',
+      });
+      socket.emit('newMessage', {
+        user: uid,
+        message: '1',
+      });
+      socket.on('error',(data)=>{
+        console.log(data)
+      })
+        if( !loading && !error){
         const setSidebarHeight = () => {
-            const sidebar = document.querySelector('.scrollable-section-1'); 
-            const sidebar2 = document.querySelector('.scrollable-section-2');
+            const sidebar = document.querySelector('.scrollable-section-1');
+      const sidebar2 = document.querySelector('.scrollable-section-2');
             const viewportHeight = window.innerHeight;
             sidebar.style.height = `${viewportHeight}px`;
             sidebar2.style.height = `${viewportHeight}px`;
@@ -47,11 +79,10 @@ const Chat = () => {
                 l.classList.add("active");
                 document.querySelector("sidebar").classList.remove("opened");
                 open.innerText = "UP";
-                const img = l.querySelector("img").src,
+                const 
                     user = l.querySelector(".user").innerText,
                     time = l.querySelector(".time").innerText;
 
-                content.querySelector("img").src = img;
                 content.querySelector(".info .user").innerHTML = user;
                 content.querySelector(".info .time").innerHTML = time;
 
@@ -91,11 +122,13 @@ const Chat = () => {
         return () => {
             window.removeEventListener('load', setSidebarHeight);
             window.removeEventListener('resize', setSidebarHeight);
+            socket.disconnect();
             list.forEach((l, i) => {
                 l.removeEventListener("click", () => click(l, i));
             });
         };
-    }, []);
+    }
+    }, [loading, error, sortedSessions]);
 
     const handleOpenClick = (e) => {
         const sidebar = document.querySelector("sidebar");
@@ -107,29 +140,50 @@ const Chat = () => {
         }
     };
 
+    
+    if (error) return <p>Error: {error.message}</p>;
+
+    const getTimeDifference = (startTime) => {
+        const now = new Date();
+        const sessionTime = new Date(startTime);
+        const differenceInMs = now - sessionTime;
+        const differenceInHours = differenceInMs / (1000 * 60 * 60);
+      
+        if (differenceInHours < 1) {
+          return `${Math.floor(differenceInMs / (1000 * 60))} minutes ago`;
+        } else if (differenceInHours < 24) {
+          return `${Math.floor(differenceInHours)} hours ago`;
+        } else {
+          return sessionTime.toLocaleDateString();
+        }
+      };
+
     return (
         <div className="container">
             <sidebar className="scrollable-section-1">
                 <span className="logo">EchoChat</span>
                 <div className="list-wrap scroll-container">
                     <div className="list">
-                        <img src="https://www.cheatsheet.com/wp-content/uploads/2019/10/taylor-swift-1024x681.jpg" alt="" />
-                        <div className="info">
-                            <span className="user">Taylor Swift</span>
-                            <span className="text">Hi! :)</span>
+                        {/* <img src="https://www.cheatsheet.com/wp-content/uploads/2019/10/taylor-swift-1024x681.jpg" alt="" /> */}
+                        <div className="info new-chat">
+                            <span className="user">New Chat</span>
                         </div>
-                        <span className="count">20</span>
-                        <span className="time">now</span>
+                        <span className="time"><ChatIcon /></span>
                     </div>
-                    <div className="list">
-                        <img src="https://www.billboard.com/files/media/miley-cyrus-vf-2-2018-billboard-1548.jpg" alt="" />
-                        <div className="info">
-                            <span className="user">Miley Cyrus</span>
-                            <span className="text">Good night.</span>
-                        </div>
-                        <span className="time">5 min. ago</span>
-                    </div>
-                    <div className="list">
+                    {loading ? (
+        <p>Loading...</p>
+      ) : (sortedSessions.map(session => (
+        <div className="list" key={session.id}>
+          <div className="info">
+            <span className="user">{session.attributes.name}</span>
+            <span className="text">latest msg. i will provide next</span>
+          </div>
+          <span className="time">
+            {getTimeDifference(session.attributes.start_time)}
+          </span>
+        </div>
+      )))}
+                    {/* <div className="list">
                         <img src="http://ia.tmgrup.com.tr/2fc58d/0/0/0/0/0/0?u=http://i.tmgrup.com.tr/cosmopolitan/galeri/unluler/isimleri-en-cok-aratilmis-dunyaca-unlu-50-kadin/10.jpg&mw=750" alt="" />
                         <div className="info">
                             <span className="user">Rihanna</span>
@@ -176,7 +230,7 @@ const Chat = () => {
                             <span className="text">Çav bella</span>
                         </div>
                         <span className="time">1 hour ago</span>
-                    </div>
+                    </div> */}
                 </div>
             </sidebar>
             <div className="content scrollable-section-2">

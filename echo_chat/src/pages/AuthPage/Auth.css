@@ -7,7 +7,7 @@
 body {
   margin: 0;
   font-family: Roboto, -apple-system, 'Helvetica Neue', 'Segoe UI', Arial, sans-serif;
-  background: #3b4465;
+  background: #3b4465 !important;
 }
 
 .forms-section {
@@ -15,6 +15,8 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  margin-left: 50%;
+  margin-right: -50%;
 }
 
 .section-title {

@@ -49,7 +49,7 @@ export default function Auth() {
           console.log(data)
           setEmail('')
           setPassword('')
-          navigate("/");
+          navigate("/chat");
         }
       }
     } catch (error) {

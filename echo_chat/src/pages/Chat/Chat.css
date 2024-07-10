@@ -14,16 +14,12 @@
     text-decoration: none;
   }
   
-  body {
-    background: #f4f7f9;
-    /* overflow-y: hidden; */
-  }
-  
-  html,
+  /* html,
   body {
     height: 100% !important;
   }
-  
+   */
+
   .container {
     display: flex;
     height: 100% !important;
@@ -42,6 +38,10 @@
   .scroll-container { 
     overflow-y: scroll; 
 } 
+
+.new-chat{
+  margin-left: 50%;
+}
 
   /* .scroll-container::-webkit-scrollbar { 
     width: 12px; 
