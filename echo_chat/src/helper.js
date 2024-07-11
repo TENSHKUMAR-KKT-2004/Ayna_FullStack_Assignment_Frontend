@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-export const storeUser = (data) => {
-  localStorage.setItem(
+export const storeUser = async (data) => {
+  await localStorage.setItem(
     "user",
     JSON.stringify({
       username: data.user.username,

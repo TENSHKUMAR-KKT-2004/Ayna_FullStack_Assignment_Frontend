@@ -8,6 +8,7 @@ const GET_SESSIONS = gql`
         id
         attributes {
           name
+          last_message
           users_permissions_user {
             data {
               id
@@ -17,7 +18,6 @@ const GET_SESSIONS = gql`
             }
           }
           start_time
-          end_time
           active
         }
       }
@@ -27,16 +27,11 @@ const GET_SESSIONS = gql`
 
 const useSessions = () => {
   const { uid } = userData();
-
   const { loading, error, data } = useQuery(GET_SESSIONS, {
     variables: { userId: uid }
   });
 
-  const sortedSessions = data ? [...data.sessions.data].sort(
-    (a, b) => new Date(b.attributes.start_time) - new Date(a.attributes.start_time)
-  ) : [];
-
-  return { loading, error, sortedSessions };
+  return { loading, error, data };
 };
 
 export default useSessions;

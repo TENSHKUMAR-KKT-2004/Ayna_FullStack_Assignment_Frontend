@@ -1,236 +1,336 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import './Chat.css'
-import ChatIcon from '@mui/icons-material/Chat';
-import useSessions from "../../hooks/useSessions";
-import io from 'socket.io-client';
-import { userData } from "../../helper";
+import ChatIcon from '@mui/icons-material/Chat'
+import useSessions from "../../hooks/useSessions"
+import io from 'socket.io-client'
+import { userData } from "../../helper"
 
-const ENDPOINT = 'http://localhost:1337';
+const ENDPOINT = 'http://localhost:1337'
 
 const Chat = () => {
+    const [currentSession, setCurrentSession] = useState(null)
+    const [message, setMessage] = useState('')
+    const [messages, setMessages] = useState([]);
+    const [msgLoading, setMsgLoading] = useState(false);
+    const [msgError, setMsgError] = useState(null);
+    const [sessionList, setSessionList] = useState([])
 
+    const socketRef = useRef(null)
 
-    // const [selected, setSelected] = useState(false);
-    const {uid,jwt} = userData()
+    const { username, uid, jwt } = userData()
 
-    const { loading, error, sortedSessions } = useSessions();
-
+    const { loading, error, data: sessions } = useSessions()
 
     useEffect(() => {
-        const socket = io(ENDPOINT,{
+        if (sessions && sessions.sessions && sessions.sessions.data) {
+            const sortedSessions = [...sessions.sessions.data].sort(
+                (a, b) => new Date(b.attributes.start_time) - new Date(a.attributes.start_time)
+            );
+            setSessionList(sortedSessions);
+        }
+    }, [sessions]);
+
+
+    // socket connection
+    useEffect(() => {
+        socketRef.current = io(ENDPOINT, {
             query: {
-              token: jwt
+                token: jwt
             }
-          });
+        });
 
-    socket.on('connect', () => {
-      console.log('Connected to socket.io server');
-    });
-    socket.emit('newSession', {
-        user: uid,
-        name: 'Session 10',
-      });
-      socket.emit('newMessage', {
-        user: uid,
-        message: '1',
-      });
-      socket.on('error',(data)=>{
-        console.log(data)
-      })
-        if( !loading && !error){
-        const setSidebarHeight = () => {
-            const sidebar = document.querySelector('.scrollable-section-1');
-      const sidebar2 = document.querySelector('.scrollable-section-2');
-            const viewportHeight = window.innerHeight;
-            sidebar.style.height = `${viewportHeight}px`;
-            sidebar2.style.height = `${viewportHeight}px`;
-        };
+        socketRef.current.on('connect', () => {
+            console.log('Connected to socket.io server');
+        });
 
-        setSidebarHeight();
-
-        window.addEventListener('load', setSidebarHeight);
-        window.addEventListener('resize', setSidebarHeight);
-
-        const ls = localStorage.getItem("selected");
-        let selected = false;
-        var list = document.querySelectorAll(".list"),
-            content = document.querySelector(".content"),
-            input = document.querySelector(".message-footer input"),
-            open = document.querySelector(".open a");
-
-        function init() {
-            //input.focus();
-            let now = 2;
-            const texts = ["İyi akşamlar", "Merhaba, nasılsın?",
-                "Harikasın! :)", "Günaydın", "Tünaydın",
-                "Hahaha", "Öğlen görüşelim.", "Pekala"];
-            for (var i = 4; i < list.length; i++) {
-                list[i].querySelector(".time").innerText = `${now} day ago`;
-                list[i].querySelector(".text").innerText = texts[(i - 4) < texts.length ? (i - 4) : Math.floor(Math.random() * texts.length)];
-                now++;
-            }
-        }
-        init();
-
-        //list click
-        function click(l, index) {
-            list.forEach(x => { x.classList.remove("active"); });
-            if (l) {
-                l.classList.add("active");
-                document.querySelector("sidebar").classList.remove("opened");
-                open.innerText = "UP";
-                const 
-                    user = l.querySelector(".user").innerText,
-                    time = l.querySelector(".time").innerText;
-
-                content.querySelector(".info .user").innerHTML = user;
-                content.querySelector(".info .time").innerHTML = time;
-
-                const inputPH = input.getAttribute("data-placeholder");
-                input.placeholder = inputPH.replace("{0}", user.split(' ')[0]);
-
-                document.querySelector(".message-wrap").scrollTop = document.querySelector(".message-wrap").scrollHeight;
-
-                localStorage.setItem("selected", index);
-            }
-        }
-
-        //process
-        function process() {
-            if (ls != null) {
-                selected = true;
-                click(list[ls], ls);
-            }
-            if (!selected) {
-                click(list[0], 0);
-            }
-
-            list.forEach((l, i) => {
-                l.addEventListener("click", function () {
-                    click(l, i);
-                });
-            });
-
-            try {
-                document.querySelector(".list.active").scrollIntoView(true);
-            }
-            catch { }
-
-        }
-        process();
+        socketRef.current.on('welcome', (data) => {
+            console.log(data);
+        });
 
         return () => {
-            window.removeEventListener('load', setSidebarHeight);
-            window.removeEventListener('resize', setSidebarHeight);
-            socket.disconnect();
-            list.forEach((l, i) => {
-                l.removeEventListener("click", () => click(l, i));
-            });
-        };
-    }
-    }, [loading, error, sortedSessions]);
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+            }
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!loading && !error) {
+            const setSidebarHeight = () => {
+                const sidebar = document.querySelector('.scrollable-section-1')
+                const sidebar2 = document.querySelector('.scrollable-section-2')
+                const viewportHeight = window.innerHeight
+                const viewportWidth = window.innerWidth
+                sidebar2.style.width = `${viewportWidth - 100}px`
+                sidebar.style.height = `${viewportHeight}px`
+                sidebar2.style.height = `${viewportHeight}px`
+            }
+
+            setSidebarHeight()
+
+            window.addEventListener('load', setSidebarHeight)
+            window.addEventListener('resize', setSidebarHeight)
+
+            const ls = localStorage.getItem("selected")
+            let selected = false
+            var list = document.querySelectorAll(".list"),
+                content = document.querySelector(".content"),
+                input = document.querySelector(".message-footer input"),
+                open = document.querySelector(".open a")
+
+            function init() {
+                //input.focus() 
+                let now = 2
+                const texts = ["İyi akşamlar", "Merhaba, nasılsın?",
+                    "Harikasın! :)", "Günaydın", "Tünaydın",
+                    "Hahaha", "Öğlen görüşelim.", "Pekala"]
+                for (var i = 4; i < list.length; i++) {
+                    list[i].querySelector(".time").innerText = `${now} day ago`
+                    list[i].querySelector(".text").innerText = texts[(i - 4) < texts.length ? (i - 4) : Math.floor(Math.random() * texts.length)]
+                    now++
+                }
+            }
+            init()
+
+            //list click
+            function click(l, index) {
+                list.forEach(x => { x.classList.remove("active") })
+                if (l) {
+                    l.classList.add("active")
+                    document.querySelector("sidebar").classList.remove("opened")
+                    open.innerText = "UP"
+                    const
+                        user = l.querySelector(".user").innerText,
+                        time = l.querySelector(".time").innerText
+
+                    content.querySelector(".info .user").innerHTML = user
+                    content.querySelector(".info .time").innerHTML = time
+
+                    const inputPH = input.getAttribute("data-placeholder")
+                    input.placeholder = inputPH.replace("{0}", user.split(' ')[0])
+
+                    document.querySelector(".message-wrap").scrollTop = document.querySelector(".message-wrap").scrollHeight
+
+                    localStorage.setItem("selected", index)
+                }
+            }
+
+            //process
+            function process() {
+                if (ls != null) {
+                    selected = true
+                    click(list[ls], ls)
+                }
+                if (!selected) {
+                    click(list[0], 0)
+                }
+
+                list.forEach((l, i) => {
+                    l.addEventListener("click", function () {
+                        click(l, i)
+                    })
+                })
+
+                try {
+                    document.querySelector(".list.active").scrollIntoView(true)
+                }
+                catch { }
+
+            }
+            process()
+
+            return () => {
+                window.removeEventListener('load', setSidebarHeight)
+                window.removeEventListener('resize', setSidebarHeight)
+                list.forEach((l, i) => {
+                    l.removeEventListener("click", () => click(l, i))
+                })
+            }
+        }
+    }, [loading, error, sessionList])
 
     const handleOpenClick = (e) => {
-        const sidebar = document.querySelector("sidebar");
-        sidebar.classList.toggle("opened");
+        const sidebar = document.querySelector("sidebar")
+        sidebar.classList.toggle("opened")
         if (sidebar.classList.contains('opened')) {
-            e.target.innerText = "DOWN";
+            e.target.innerText = "DOWN"
         } else {
-            e.target.innerText = "UP";
+            e.target.innerText = "UP"
         }
+    }
+
+    const handleSessionSelect = (session) => {
+        setCurrentSession(session);
+        setMsgLoading(true);
+        setMsgError(null);
+        setMessages([]);
+
+        socketRef.current.emit('fetchMessages', { userId: uid, sessionId: session });
+
+        socketRef.current.on('messages', (data) => {
+            setMsgLoading(false);
+            if (data.error) {
+                setMsgError(data.error);
+            } else if (data.messages) {
+                setMessages(data.messages)
+            }
+        });
     };
 
+    const handleSendMessage = () => {
+        const payload = {
+            userId: uid,
+            username,
+            sessionId: currentSession ? currentSession : null,
+            message,
+        };
+
+        if (socketRef.current) {
+            socketRef.current.emit('sendMessage', payload);
+            socketRef.current.on('resMessage', (newMessages) => {
+                const formattedMessages = newMessages.map((newMsg) => ({
+                    id: newMsg.data.id,
+                    content: newMsg.data.attributes.content,
+                    is_read: newMsg.data.attributes.is_read,
+                    createdAt: newMsg.data.attributes.createdAt,
+                    updatedAt: newMsg.data.attributes.updatedAt,
+                    publishedAt: newMsg.data.attributes.publishedAt,
+                    sender: newMsg.data.attributes.sender,
+                    users_permissions_user: {
+                        id: uid,
+                        username: username
+                    },
+                    session: {
+                        id: currentSession
+                    },
+                }))
+
+                setMessages((prevMessages) => {
+                    const combinedMessages = [...prevMessages, ...formattedMessages]
+                    const uniqueMessages = Array.from(
+                        new Set(combinedMessages.map((msg) => msg.id))
+                    ).map((id) => combinedMessages.find((msg) => msg.id === id))
+                    return uniqueMessages
+                })
+            })
+
+            socketRef.current.on('updatedSession', (updatedSession) => {
+
+                console.log(updatedSession)
     
-    if (error) return <p>Error: {error.message}</p>;
+                setSessionList((prevSessions) => {
+                    const updatedSessionList = prevSessions.map(session => {
+                        if (session.id === updatedSession.id.toString()) {
+                            return {
+                                ...session,
+                                attributes: {
+                                    ...session.attributes,
+                                    name: updatedSession.name,
+                                    start_time: updatedSession.start_time,
+                                    active: updatedSession.active,
+                                    updatedAt: updatedSession.updatedAt,
+                                    last_message: updatedSession.last_message
+                                }
+                            };
+                        }
+                        return session
+                    })
+                    const sortedSessions = updatedSessionList.sort((a, b) => new Date(b.attributes.start_time) - new Date(a.attributes.start_time));
+        
+                    return sortedSessions
+                })
+            })
+            
+            setMessage('')
+        }
+        setMessage('')
+    };
+
+    if (error) return <p>Error: {error.message}</p>
+    if (msgError) return <p>Error: {error.message}</p>
 
     const getTimeDifference = (startTime) => {
-        const now = new Date();
-        const sessionTime = new Date(startTime);
-        const differenceInMs = now - sessionTime;
-        const differenceInHours = differenceInMs / (1000 * 60 * 60);
-      
+        const now = new Date()
+        const sessionTime = new Date(startTime)
+        const differenceInMs = now - sessionTime
+        const differenceInHours = differenceInMs / (1000 * 60 * 60)
+
         if (differenceInHours < 1) {
-          return `${Math.floor(differenceInMs / (1000 * 60))} minutes ago`;
+            return `${Math.floor(differenceInMs / (1000 * 60))} minutes ago`
         } else if (differenceInHours < 24) {
-          return `${Math.floor(differenceInHours)} hours ago`;
+            return `${Math.floor(differenceInHours)} hours ago`
         } else {
-          return sessionTime.toLocaleDateString();
+            return sessionTime.toLocaleDateString()
         }
-      };
+    }
+
+    const handleNewSession = () => {
+        setMessages([])
+        setCurrentSession('')
+
+        socketRef.current.on('newSession', (newSession) => {
+            const formattedNewSession = {
+                __typename: "SessionEntity",
+                id: newSession.newSession.id,
+                attributes: {
+                    __typename: "Session",
+                    name: newSession.newSession.name,
+                    users_permissions_user: {
+                        __typename: "UsersPermissionsUserEntityResponse",
+                        data: {
+                            __typename: "UsersPermissionsUserEntity",
+                            id: uid,
+                            attributes: {
+                                __typename: "UsersPermissionsUser",
+                                username: username
+                            }
+                        }
+                    },
+                    start_time: newSession.newSession.start_time,
+                    last_message: newSession.newSession.last_message,
+                    active: newSession.newSession.active
+                }
+            }
+
+            setSessionList((prevSessions) => {
+                const combinedSessions = [...prevSessions, formattedNewSession];
+                const uniqueSessions = Array.from(
+                    new Set(combinedSessions.map((msg) => msg.id))
+                ).map((id) => combinedSessions.find((msg) => msg.id === id));
+
+                const sortedSessions = uniqueSessions.sort(
+                    (a, b) => new Date(b.attributes.start_time) - new Date(a.attributes.start_time)
+                );
+
+                return sortedSessions;
+            });
+        })
+    }
 
     return (
         <div className="container">
             <sidebar className="scrollable-section-1">
                 <span className="logo">EchoChat</span>
                 <div className="list-wrap scroll-container">
-                    <div className="list">
-                        {/* <img src="https://www.cheatsheet.com/wp-content/uploads/2019/10/taylor-swift-1024x681.jpg" alt="" /> */}
+                    <div onClick={handleNewSession} className="list">
                         <div className="info new-chat">
                             <span className="user">New Chat</span>
                         </div>
                         <span className="time"><ChatIcon /></span>
                     </div>
                     {loading ? (
-        <p>Loading...</p>
-      ) : (sortedSessions.map(session => (
-        <div className="list" key={session.id}>
-          <div className="info">
-            <span className="user">{session.attributes.name}</span>
-            <span className="text">latest msg. i will provide next</span>
-          </div>
-          <span className="time">
-            {getTimeDifference(session.attributes.start_time)}
-          </span>
-        </div>
-      )))}
-                    {/* <div className="list">
-                        <img src="http://ia.tmgrup.com.tr/2fc58d/0/0/0/0/0/0?u=http://i.tmgrup.com.tr/cosmopolitan/galeri/unluler/isimleri-en-cok-aratilmis-dunyaca-unlu-50-kadin/10.jpg&mw=750" alt="" />
-                        <div className="info">
-                            <span className="user">Rihanna</span>
-                            <span className="text">Çav bella</span>
+                        <p>Loading...</p>
+                    ) : (sessionList.map(session => (
+                        <div className="list" onClick={() => handleSessionSelect(session.id)} key={session.id}>
+                            <div className="info">
+                                <span className="user">{session.attributes.name}</span>
+                                <span className="text">{session.attributes.last_message}</span>
+                            </div>
+                            <span className="time">
+                                {getTimeDifference(session.attributes.start_time)}
+                            </span>
                         </div>
-                        <span className="time">1 hour ago</span>
-                    </div>
-                    <div className="list">
-                        <img src="http://s3-eu-west-1.amazonaws.com/diy-magazine//diy/Artists/G/Girl-In-red/Girl-in-Red_-by-Chris-Almeida-1.png" width="50" height="50" alt="" />
-                        <div className="info">
-                            <span className="user">Furry</span>
-                            <span className="text">Ok, lets go.</span>
-                        </div>
-                        <span className="time">1 day ago</span>
-                    </div>
-                    <div className="list">
-                        <img src="data:image" alt="" />
-                        <div className="info">
-                            <span className="user">Cansu Dere</span>
-                            <span className="text">Ok, lets go.</span>
-                        </div>
-                        <span className="time">1 day ago</span>
-                    </div>
-                    <div className="list">
-                        <img src="data:image" alt="" />
-                        <div className="info">
-                            <span className="user">Demet Özdemir</span>
-                            <span className="text">Hi! :)</span>
-                        </div>
-                        <span className="time">now</span>
-                    </div>
-                    <div className="list">
-                        <img src="data:image" alt="" />
-                        <div className="info">
-                            <span className="user">Pelin Karahan</span>
-                            <span className="text">Good night.</span>
-                        </div>
-                        <span className="time">5 min. ago</span>
-                    </div>
-                    <div className="list">
-                        <img src="data:image" alt="" />
-                        <div className="info">
-                            <span className="user">Burçin Terzioğlu</span>
-                            <span className="text">Çav bella</span>
-                        </div>
-                        <span className="time">1 hour ago</span>
-                    </div> */}
+                    )))}
                 </div>
             </sidebar>
             <div className="content scrollable-section-2">
@@ -241,92 +341,29 @@ const Chat = () => {
                         <span className="time"></span>
                     </div>
                     <div className="open">
-                        <a href="javascript:;" onClick={handleOpenClick}>UP</a>
+                        <a href="javascript: " onClick={handleOpenClick}>UP</a>
                     </div>
                 </header>
                 <div className="message-wrap scroll-container">
-                    <div className="message-list">
-                        <div className="msg">
-                            <p>
-                                Lorem ipsum dolor sit amet consectetur, adipisicing elit. Odit minus minima quo corporis.
-                            </p>
+
+                    {msgLoading ? (
+                        <p>Loading...</p>
+                    ) : (messages.map((message) => (
+                        <div key={message.id} className={`message-list ${message.sender === 'server' ? '' : 'me'}`}>
+                            <div className="msg">
+                                <p>{message.content}</p>
+                            </div>
+                            <div className="time">{getTimeDifference(message.createdAt)}</div>
                         </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list me">
-                        <div className="msg">
-                            <p>
-                                Lorem ipsum dolor sit amet.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list">
-                        <div className="msg">
-                            <p>Odit minus minima quo corporis.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list me">
-                        <div className="msg">
-                            <p>
-                                Lorem.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list">
-                        <div className="msg">
-                            <p>
-                                Lorem, ipsum dolor.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list me">
-                        <div className="msg">
-                            <p>
-                                Lorem ipsum dolor sit amet consectetur adipisicing elit. Ad numquam laudantium illum quidem? Iste hic doloribus quos non iure libero excepturi, praesentium in, blanditiis repellat labore illo, voluptas sed fugit consequatur dolorum assumenda ea nesciunt. Pariatur.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list">
-                        <div className="msg">
-                            <p>
-                                Lorem ipsum dolor sit amet consectetur, adipisicing elit. Odit minus minima quo corporis.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list me">
-                        <div className="msg">
-                            <p>
-                                Lorem, ipsum.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list">
-                        <div className="msg">
-                            <p>
-                                Lorem ipsum dolor sit, amet consectetur adipisicing elit. Maxime, nulla doloribus dolore impedit dolorem hic ex dolor quo illo tenetur ab exercitationem atque iusto, voluptatibus quos.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
-                    <div className="message-list me">
-                        <div className="msg">
-                            <p>
-                                Lorem dolor sit.
-                            </p>
-                        </div>
-                        <div className="time">now</div>
-                    </div>
+                    )))}
+
                 </div>
                 <div className="message-footer">
-                    <input type="text" data-placeholder="Send a message to {0}" />
+                    <input type="text"
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        data-placeholder="Send a message to {0}" />
+                    <button onClick={handleSendMessage}>Send</button>
                 </div>
             </div>
         </div>
