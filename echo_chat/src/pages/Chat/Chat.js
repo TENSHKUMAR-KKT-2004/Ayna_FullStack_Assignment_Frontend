@@ -8,7 +8,7 @@ import { userData } from "../../helper"
 import { Link } from "react-router-dom"
 import { toast } from "react-toastify"
 
-const ENDPOINT = 'http://localhost:1337'
+const ENDPOINT = 'https://genuine-confidence-10f0398c7f.strapiapp.com/'
 
 const Chat = () => {
     const [currentSession, setCurrentSession] = useState(null)

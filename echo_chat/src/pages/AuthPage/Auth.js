@@ -35,7 +35,7 @@ export default function Auth() {
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    const url = `http://localhost:1337/api/auth/local`
+    const url = `https://genuine-confidence-10f0398c7f.strapiapp.com/api/auth/local`
     try {
       if (email && password) {
         const { data } = await axios.post(url, {
@@ -68,7 +68,7 @@ export default function Auth() {
     e.preventDefault()
 
     try {
-      const url = `http://localhost:1337/api/auth/local/register`
+      const url = `https://genuine-confidence-10f0398c7f.strapiapp.com/api/auth/local/register`
       if (userName && reg_email && reg_password) {
         const res = await axios.post(url, {
           email: reg_email, password: reg_password, username: userName
