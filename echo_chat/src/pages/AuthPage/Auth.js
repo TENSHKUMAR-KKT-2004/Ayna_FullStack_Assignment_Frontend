@@ -46,7 +46,6 @@ export default function Auth() {
           toast.success("Logged in successfully!", {
             hideProgressBar: true,
           })
-          console.log(data)
           setEmail('')
           setPassword('')
           navigate("/chat")

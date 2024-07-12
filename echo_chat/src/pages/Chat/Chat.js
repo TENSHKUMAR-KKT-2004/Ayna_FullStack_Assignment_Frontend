@@ -59,7 +59,6 @@ const Chat = () => {
         const onSessionDeleted = ({ sessionId }) => {
             setSessionList((prevSessions) => {
                 const updatedSessions = prevSessions.filter(session => session.id !== sessionId)
-                console.log('Updated sessions:', updatedSessions)
                 return updatedSessions
             })
 
@@ -169,7 +168,6 @@ const Chat = () => {
         }
     }, [sessionList])
 
-    console.log('sl', sessionList)
     const handleOpenClick = (e) => {
         const sidebar = document.querySelector("sidebar")
         sidebar.classList.toggle("opened")
