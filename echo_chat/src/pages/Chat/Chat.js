@@ -8,8 +8,6 @@ import { userData } from "../../helper"
 import { Link } from "react-router-dom"
 import { toast } from "react-toastify"
 
-const ENDPOINT = 'https://genuine-confidence-10f0398c7f.strapiapp.com/'
-
 const Chat = () => {
     const [currentSession, setCurrentSession] = useState(null)
     const [message, setMessage] = useState('')
@@ -37,11 +35,14 @@ const Chat = () => {
 
     // socket connection
     useEffect(() => {
-        socketRef.current = io(ENDPOINT, {
+        socketRef.current = io('https://genuine-confidence-10f0398c7f.strapiapp.com/', {
             query: {
                 token: jwt
-            }
+            },
+            transports: ['websocket'],
+            withCredentials: true,
         })
+        
 
         socketRef.current.on('connect', () => {
             toast.success("Connected to Web Socket server", {
