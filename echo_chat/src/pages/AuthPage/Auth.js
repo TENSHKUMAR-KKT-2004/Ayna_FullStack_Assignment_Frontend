@@ -8,56 +8,56 @@ import { storeUser } from "../../helper"
 export default function Auth() {
 
   useEffect(() => {
-    const switchers = [...document.querySelectorAll('.switcher')];
+    const switchers = [...document.querySelectorAll('.switcher')]
 
     switchers.forEach(item => {
       item.addEventListener('click', function () {
-        switchers.forEach(item => item.parentElement.classList.remove('is-active'));
-        this.parentElement.classList.add('is-active');
-      });
-    });
+        switchers.forEach(item => item.parentElement.classList.remove('is-active'))
+        this.parentElement.classList.add('is-active')
+      })
+    })
 
     return () => {
       switchers.forEach(item => {
         item.removeEventListener('click', function () {
-          switchers.forEach(item => item.parentElement.classList.remove('is-active'));
-          this.parentElement.classList.add('is-active');
-        });
-      });
-    };
-  }, []);
+          switchers.forEach(item => item.parentElement.classList.remove('is-active'))
+          this.parentElement.classList.add('is-active')
+        })
+      })
+    }
+  }, [])
 
   // login funtionality
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const handleLogin = async (e) => {
     e.preventDefault()
-    const url = `http://localhost:1337/api/auth/local`;
+    const url = `http://localhost:1337/api/auth/local`
     try {
       if (email && password) {
         const { data } = await axios.post(url, {
           password: password, identifier: email
-        });
+        })
         if (data.jwt) {
-          storeUser(data);
+          storeUser(data)
           toast.success("Logged in successfully!", {
             hideProgressBar: true,
-          });
+          })
           console.log(data)
           setEmail('')
           setPassword('')
-          navigate("/chat");
+          navigate("/chat")
         }
       }
     } catch (error) {
       toast.error(error.message, {
         hideProgressBar: true,
-      });
+      })
     }
-  };
+  }
 
   // registeration funtionality
   const [reg_email, setreg_Email] = useState('')
@@ -68,30 +68,30 @@ export default function Auth() {
     e.preventDefault()
 
     try {
-      const url = `http://localhost:1337/api/auth/local/register`;
+      const url = `http://localhost:1337/api/auth/local/register`
       if (userName && reg_email && reg_password) {
         const res = await axios.post(url, {
           email: reg_email, password: reg_password, username: userName
-        });
+        })
         if (!!res) {
           toast.success("Registered successfully!", {
             hideProgressBar: true,
-          });
+          })
           toast.success("Now you can login to our EchoChat!", {
             hideProgressBar: true,
-          });
+          })
           setreg_Email('')
           setreg_Password('')
           setuserName('')
-          navigate("/auth");
+          navigate("/auth")
         }
       }
     } catch (error) {
       toast.error(error.message, {
         hideProgressBar: true,
-      });
+      })
     }
-  };
+  }
 
   return (
     <section className="forms-section">

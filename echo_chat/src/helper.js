@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 export const storeUser = async (data) => {
   await localStorage.setItem(
@@ -9,24 +9,24 @@ export const storeUser = async (data) => {
       uid: data.user.id,
       jwt: data.jwt,
     })
-  );
-};
+  )
+}
 
 export const userData = () => {
-  const stringifiedUser = localStorage.getItem("user") || '""';
-  return JSON.parse(stringifiedUser || {});
-};
+  const stringifiedUser = localStorage.getItem("user") || '""'
+  return JSON.parse(stringifiedUser || {})
+}
 
 export const Protector = ({ Component }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
-  const { jwt } = userData();
+  const { jwt } = userData()
 
   useEffect(() => {
     if (!jwt) {
-      navigate("/auth");
+      navigate("/auth")
     }
-  }, [navigate, jwt]);
+  }, [navigate, jwt])
 
-  return <Component />;
-};
+  return <Component />
+}

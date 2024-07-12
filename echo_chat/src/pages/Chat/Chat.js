@@ -1,21 +1,25 @@
 import React, { useEffect, useState, useRef } from "react"
 import './Chat.css'
 import ChatIcon from '@mui/icons-material/Chat'
+import DeleteIcon from '@mui/icons-material/Delete'
 import useSessions from "../../hooks/useSessions"
 import io from 'socket.io-client'
 import { userData } from "../../helper"
+import { Link } from "react-router-dom"
+import { toast } from "react-toastify"
 
 const ENDPOINT = 'http://localhost:1337'
 
 const Chat = () => {
     const [currentSession, setCurrentSession] = useState(null)
     const [message, setMessage] = useState('')
-    const [messages, setMessages] = useState([]);
-    const [msgLoading, setMsgLoading] = useState(false);
-    const [msgError, setMsgError] = useState(null);
+    const [messages, setMessages] = useState([])
+    const [msgLoading, setMsgLoading] = useState(false)
+    const [msgError, setMsgError] = useState(null)
     const [sessionList, setSessionList] = useState([])
 
     const socketRef = useRef(null)
+    const newSessionIdRef = useRef(null)
 
     const { username, uid, jwt } = userData()
 
@@ -25,10 +29,10 @@ const Chat = () => {
         if (sessions && sessions.sessions && sessions.sessions.data) {
             const sortedSessions = [...sessions.sessions.data].sort(
                 (a, b) => new Date(b.attributes.start_time) - new Date(a.attributes.start_time)
-            );
-            setSessionList(sortedSessions);
+            )
+            setSessionList(sortedSessions)
         }
-    }, [sessions]);
+    }, [sessions])
 
 
     // socket connection
@@ -37,19 +41,38 @@ const Chat = () => {
             query: {
                 token: jwt
             }
-        });
+        })
 
         socketRef.current.on('connect', () => {
-            console.log('Connected to socket.io server');
-        });
+            toast.success("Connected to Web Socket server", {
+                hideProgressBar: true,
+            })
+        })
 
         socketRef.current.on('welcome', (data) => {
-            console.log(data);
-        });
+            toast.success(data.text, {
+                hideProgressBar: true,
+            })
+        })
+
+        const onSessionDeleted = ({ sessionId }) => {
+            setSessionList((prevSessions) => {
+                const updatedSessions = prevSessions.filter(session => session.id !== sessionId)
+                console.log('Updated sessions:', updatedSessions)
+                return updatedSessions
+            })
+
+            toast.success("Session deleted successfully", {
+                hideProgressBar: true,
+            })
+        }
+
+        socketRef.current.on('sessionDeleted', onSessionDeleted)
 
         return () => {
             if (socketRef.current) {
-                socketRef.current.disconnect();
+                socketRef.current.off('sessionDeleted', onSessionDeleted)
+                socketRef.current.disconnect()
             }
         }
     }, [])
@@ -77,20 +100,6 @@ const Chat = () => {
                 content = document.querySelector(".content"),
                 input = document.querySelector(".message-footer input"),
                 open = document.querySelector(".open a")
-
-            function init() {
-                //input.focus() 
-                let now = 2
-                const texts = ["İyi akşamlar", "Merhaba, nasılsın?",
-                    "Harikasın! :)", "Günaydın", "Tünaydın",
-                    "Hahaha", "Öğlen görüşelim.", "Pekala"]
-                for (var i = 4; i < list.length; i++) {
-                    list[i].querySelector(".time").innerText = `${now} day ago`
-                    list[i].querySelector(".text").innerText = texts[(i - 4) < texts.length ? (i - 4) : Math.floor(Math.random() * texts.length)]
-                    now++
-                }
-            }
-            init()
 
             //list click
             function click(l, index) {
@@ -149,6 +158,17 @@ const Chat = () => {
         }
     }, [loading, error, sessionList])
 
+    useEffect(() => {
+        if (newSessionIdRef.current) {
+            const newSessionElement = document.getElementById(`session-${newSessionIdRef.current}`)
+            if (newSessionElement) {
+                newSessionElement.click()
+                newSessionIdRef.current = null
+            }
+        }
+    }, [sessionList])
+
+    console.log('sl', sessionList)
     const handleOpenClick = (e) => {
         const sidebar = document.querySelector("sidebar")
         sidebar.classList.toggle("opened")
@@ -160,22 +180,22 @@ const Chat = () => {
     }
 
     const handleSessionSelect = (session) => {
-        setCurrentSession(session);
-        setMsgLoading(true);
-        setMsgError(null);
-        setMessages([]);
+        setCurrentSession(session)
+        setMsgLoading(true)
+        setMsgError(null)
+        setMessages([])
 
-        socketRef.current.emit('fetchMessages', { userId: uid, sessionId: session });
+        socketRef.current.emit('fetchMessages', { userId: uid, sessionId: session })
 
         socketRef.current.on('messages', (data) => {
-            setMsgLoading(false);
+            setMsgLoading(false)
             if (data.error) {
-                setMsgError(data.error);
+                setMsgError(data.error)
             } else if (data.messages) {
                 setMessages(data.messages)
             }
-        });
-    };
+        })
+    }
 
     const handleSendMessage = () => {
         const payload = {
@@ -183,10 +203,10 @@ const Chat = () => {
             username,
             sessionId: currentSession ? currentSession : null,
             message,
-        };
+        }
 
         if (socketRef.current) {
-            socketRef.current.emit('sendMessage', payload);
+            socketRef.current.emit('sendMessage', payload)
             socketRef.current.on('resMessage', (newMessages) => {
                 const formattedMessages = newMessages.map((newMsg) => ({
                     id: newMsg.data.id,
@@ -215,12 +235,9 @@ const Chat = () => {
             })
 
             socketRef.current.on('updatedSession', (updatedSession) => {
-
-                console.log(updatedSession)
-    
                 setSessionList((prevSessions) => {
                     const updatedSessionList = prevSessions.map(session => {
-                        if (session.id === updatedSession.id.toString()) {
+                        if (session.id == updatedSession.id) {
                             return {
                                 ...session,
                                 attributes: {
@@ -231,20 +248,23 @@ const Chat = () => {
                                     updatedAt: updatedSession.updatedAt,
                                     last_message: updatedSession.last_message
                                 }
-                            };
+                            }
                         }
                         return session
                     })
-                    const sortedSessions = updatedSessionList.sort((a, b) => new Date(b.attributes.start_time) - new Date(a.attributes.start_time));
-        
-                    return sortedSessions
+
+                    const sortedSessions = updatedSessionList.sort((a, b) => new Date(b.attributes.start_time) - new Date(a.attributes.start_time))
+
+                    return [...sortedSessions]
                 })
+
+                newSessionIdRef.current = updatedSession.id
             })
-            
+
             setMessage('')
         }
         setMessage('')
-    };
+    }
 
     if (error) return <p>Error: {error.message}</p>
     if (msgError) return <p>Error: {error.message}</p>
@@ -292,19 +312,26 @@ const Chat = () => {
                 }
             }
 
+
             setSessionList((prevSessions) => {
-                const combinedSessions = [...prevSessions, formattedNewSession];
+                const combinedSessions = [...prevSessions, formattedNewSession]
                 const uniqueSessions = Array.from(
-                    new Set(combinedSessions.map((msg) => msg.id))
-                ).map((id) => combinedSessions.find((msg) => msg.id === id));
+                    new Set(combinedSessions.map((session) => session.id))
+                ).map((id) => combinedSessions.find((session) => session.id === id))
 
                 const sortedSessions = uniqueSessions.sort(
                     (a, b) => new Date(b.attributes.start_time) - new Date(a.attributes.start_time)
-                );
+                )
+                return sortedSessions
+            })
 
-                return sortedSessions;
-            });
+            newSessionIdRef.current = formattedNewSession.id
+
         })
+    }
+
+    const handleDeleteSession = (session_id) => {
+        socketRef.current.emit('deleteSession', { userId: uid, sessionId: session_id })
     }
 
     return (
@@ -321,7 +348,7 @@ const Chat = () => {
                     {loading ? (
                         <p>Loading...</p>
                     ) : (sessionList.map(session => (
-                        <div className="list" onClick={() => handleSessionSelect(session.id)} key={session.id}>
+                        <div className="list" id={`session-${session.id}`} onClick={() => handleSessionSelect(session.id)} key={session.id}>
                             <div className="info">
                                 <span className="user">{session.attributes.name}</span>
                                 <span className="text">{session.attributes.last_message}</span>
@@ -329,6 +356,7 @@ const Chat = () => {
                             <span className="time">
                                 {getTimeDifference(session.attributes.start_time)}
                             </span>
+                            <div><DeleteIcon onClick={() => handleDeleteSession(session.id)} /></div>
                         </div>
                     )))}
                 </div>
@@ -339,6 +367,10 @@ const Chat = () => {
                     <div className="info">
                         <span className="user"></span>
                         <span className="time"></span>
+                    </div>
+                    <div style={{ paddingRight: '10px' }}>Hi, {username}</div>
+                    <div>
+                        <Link to={'/logout'} className="navbar-link">Logout</ Link>
                     </div>
                     <div className="open">
                         <a href="javascript: " onClick={handleOpenClick}>UP</a>

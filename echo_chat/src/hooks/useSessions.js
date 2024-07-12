@@ -1,9 +1,9 @@
-import { gql, useQuery } from '@apollo/client';
-import { userData } from '../helper';
+import { useQuery, gql } from '@apollo/client'
+import { userData } from '../helper'
 
 const GET_SESSIONS = gql`
   query GetSessions($userId: ID!) {
-    sessions(filters: { users_permissions_user: { id: { eq: $userId } } }) {
+    sessions(filters: { users_permissions_user: { id: { eq: $userId } } }, pagination: { limit: 1000 }) {
       data {
         id
         attributes {
@@ -23,15 +23,19 @@ const GET_SESSIONS = gql`
       }
     }
   }
-`;
+`
 
-const useSessions = () => {
-  const { uid } = userData();
+const useSessions = (userId) => {
+  const { uid } = userData()
   const { loading, error, data } = useQuery(GET_SESSIONS, {
-    variables: { userId: uid }
-  });
+    variables: { userId: uid },
+  })
 
-  return { loading, error, data };
-};
+  return {
+    data,
+    loading,
+    error
+  }
+}
 
-export default useSessions;
+export default useSessions 

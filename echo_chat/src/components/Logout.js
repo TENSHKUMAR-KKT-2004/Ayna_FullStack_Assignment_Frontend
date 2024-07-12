@@ -1,15 +1,15 @@
-import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect } from "react"
+import { useNavigate } from "react-router-dom"
 
 const Logout = () => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   useEffect(() => {
-    localStorage.setItem("user", "");
-    navigate("/auth",);
-  }, [navigate]);
+    localStorage.setItem("user", "")
+    navigate("/auth",)
+  }, [navigate])
 
-  return null;
-};
+  return null
+}
 
-export default Logout;
+export default Logout
