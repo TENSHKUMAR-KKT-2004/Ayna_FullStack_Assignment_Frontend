@@ -6,26 +6,19 @@ import { useNavigate } from "react-router-dom"
 import { storeUser } from "../../helper"
 
 export default function Auth() {
-
+  const [isLoginForm, setIsLoginForm] = useState(true);
   useEffect(() => {
-    const switchers = [...document.querySelectorAll('.switcher')]
+    const loginButton = document.querySelector('.switcher-login');
+    const signupButton = document.querySelector('.switcher-signup');
 
-    switchers.forEach(item => {
-      item.addEventListener('click', function () {
-        switchers.forEach(item => item.parentElement.classList.remove('is-active'))
-        this.parentElement.classList.add('is-active')
-      })
-    })
+    loginButton.addEventListener('click', () => setIsLoginForm(true));
+    signupButton.addEventListener('click', () => setIsLoginForm(false));
 
     return () => {
-      switchers.forEach(item => {
-        item.removeEventListener('click', function () {
-          switchers.forEach(item => item.parentElement.classList.remove('is-active'))
-          this.parentElement.classList.add('is-active')
-        })
-      })
-    }
-  }, [])
+      loginButton.removeEventListener('click', () => setIsLoginForm(true));
+      signupButton.removeEventListener('click', () => setIsLoginForm(false));
+    };
+  }, []);
 
   // login funtionality
   const [email, setEmail] = useState('')
@@ -95,70 +88,86 @@ export default function Auth() {
   return (
     <section className="forms-section">
       <h1 className="section-title">Welcome to EchoChat</h1>
+      <div className="switcher-container">
+        <button style={{paddingRight:'5%'}} type="button" className="switcher switcher-login">
+          Login
+          <span className="underline"></span>
+        </button>
+
+        <button type="button" className="switcher switcher-signup">
+          Sign Up
+          <span className="underline"></span>
+        </button>
+      </div>
       <div className="forms">
-        <div className="form-wrapper is-active">
-          <button type="button" className="switcher switcher-login">
-            Login
-            <span className="underline"></span>
-          </button>
-          <form className="form form-login">
+        <div className={`form-wrapper ${isLoginForm ? 'is-active' : ''}`}>
+          <form className="form form-login" onSubmit={handleLogin}>
             <fieldset>
               <legend>Please, enter your email and password for login.</legend>
               <div className="input-block">
-                <label for="login-email">E-mail</label>
-                <input id="login-email"
+                <label htmlFor="login-email">E-mail</label>
+                <input
+                  id="login-email"
                   onChange={(e) => setEmail(e.target.value)}
                   value={email}
-                  type="email" required />
+                  type="email"
+                  required
+                />
               </div>
               <div className="input-block">
-                <label for="login-password">Password</label>
-                <input id="login-password"
+                <label htmlFor="login-password">Password</label>
+                <input
+                  id="login-password"
                   onChange={(e) => setPassword(e.target.value)}
                   value={password}
-                  type="password" required />
+                  type="password"
+                  required
+                />
               </div>
             </fieldset>
-            <button type="submit" onClick={handleLogin} className="btn-login">Login</button>
+            <button type="submit" className="btn-login">Login</button>
           </form>
         </div>
-        <div className="form-wrapper">
-          <button type="button" className="switcher switcher-signup">
-            Sign Up
-            <span className="underline"></span>
-          </button>
-          <form className="form form-signup">
+        <div className={`form-wrapper ${!isLoginForm ? 'is-active' : ''}`}>
+          <form className="form form-signup" onSubmit={signUp}>
             <fieldset>
               <legend>Please, enter your email, password and password confirmation for sign up.</legend>
               <div className="input-block">
-                <label for="signup-username">Username</label>
-                <input id="signup-username"
+                <label htmlFor="signup-username">Username</label>
+                <input
+                  id="signup-username"
                   onChange={(e) => setuserName(e.target.value)}
                   value={userName}
-
-                  type="text" required />
+                  type="text"
+                  required
+                />
               </div>
               <div className="input-block">
-                <label for="signup-email">E-mail</label>
-                <input id="signup-email"
+                <label htmlFor="signup-email">E-mail</label>
+                <input
+                  id="signup-email"
                   onChange={(e) => setreg_Email(e.target.value)}
                   value={reg_email}
-
-                  type="email" required />
+                  type="email"
+                  required
+                />
               </div>
               <div className="input-block">
-                <label for="signup-password">Password</label>
-                <input id="signup-password"
+                <label htmlFor="signup-password">Password</label>
+                <input
+                  id="signup-password"
                   onChange={(e) => setreg_Password(e.target.value)}
                   value={reg_password}
-
-                  type="password" required />
+                  type="password"
+                  required
+                />
               </div>
             </fieldset>
-            <button type="submit" onClick={signUp} className="btn-signup">Continue</button>
+            <button type="submit" className="btn-signup">Continue</button>
           </form>
         </div>
       </div>
     </section>
+
   )
 }
